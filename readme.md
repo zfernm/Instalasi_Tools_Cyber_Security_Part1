@@ -16,9 +16,9 @@ Script ini adalah kumpulan tools yang berguna untuk keperluan keamanan siber. De
 
 ## Persyaratan
 
-- Sistem operasi: Debian, Ubuntu, atau Kali Linux
-- Hak akses root
-- Paket berikut:
+- Operating system: Debian, Ubuntu, or Kali Linux
+- Root privileges
+- Following packages:
   - `snap`
   - `python3-pip`
   - `golang`
@@ -39,11 +39,11 @@ Script ini adalah kumpulan tools yang berguna untuk keperluan keamanan siber. De
    ```
 2. Ubah izin file agar bisa dieksekusi:
    ```bash
-   chmod +x Tools_Part_Satu.sh
+   chmod +x tools_.sh
    ```
 3. Jalankan script:
    ```bash
-   ./Tools_Part_Satu.sh
+   ./tools.sh
    ```
 4. Pilih opsi yang tersedia dari menu untuk menginstal tools yang diinginkan.
 
