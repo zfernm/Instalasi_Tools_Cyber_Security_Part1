@@ -56,7 +56,7 @@ Script ini adalah kumpulan tools yang berguna untuk keperluan keamanan siber. De
 ## Menu Opsi
 
 ![Output ](<Tool_Cyber_Security_Part_Satu.png>)
-![Output](<Tool_Cyber_Security_Part1.png>)
+![Output](<Tools_Cyber_Security_Part1.png>)
 
 ## Instalasi Tools
 
