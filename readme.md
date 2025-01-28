@@ -28,8 +28,8 @@ Script ini adalah kumpulan tools yang berguna untuk keperluan keamanan siber. De
 ### Clone Repository
 1. Clone repository ke lokal:
    ```bash
-   git clone https://github.com/yourusername/yourrepository.git
-   cd yourrepository
+   git clone git@github.com:zfernm/Instalasi_Tools_Cyber_Security_Part1.git
+   cd Instalasi_Tools_Cyber_Security_Part1
    ```
 
 ### Jalankan Script
@@ -88,9 +88,9 @@ Mengambil URL yang telah diarsipkan oleh Wayback Machine.
 
 ## Media Sosial
 
-- **Telegram**: [Samuel Hamonangan](https://t.me/zfernm)
-- **LinkedIn**: [Samuel Hamonangan](https://www.linkedin.com/in/samuel-hamonangan-s-099604255/)
-- **Instagram**: [Samuel Hamonangan](https://www.instagram.com/samuellhsss)
+- **Telegram**: [Samuel Hamonangan S.](https://t.me/zfernm)
+- **LinkedIn**: [Samuel Hamonangan S.](https://www.linkedin.com/in/samuel-hamonangan-s-099604255/)
+- **Instagram**: [Samuel Hamonangan S.](https://www.instagram.com/samuellhsss)
 
 ## Lisensi
 
