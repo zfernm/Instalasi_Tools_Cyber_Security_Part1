@@ -14,7 +14,7 @@ NUCLEI="go/bin/nuclei"
 DALFOX="go/bin/dalfox"
 FFUF="go/bin/ffuf"
 WAYBACKURLS="go/bin/waybackurls"
-SEHARUSNYA="/bin"
+SEHARUSNYA="/usr/local/bin"
 
 TELEGRAM="https://t.me/zfernm"
 LINKEDIN="https://www.linkedin.com/in/samuel-hamonangan-s-099604255/"
@@ -86,17 +86,20 @@ case $pilihan in
         mv ${NUCLEI} ${SEHARUSNYA}
         echo -e "${INFO} Semua Tools Projectdiscovery berhasil terinstall."
         ;;
+
     2)
         echo -e "${PROSES} Menginstall dalfox..."
         go install github.com/hahwul/dalfox/v2@latest
         mv ${DALFOX} ${SEHARUSNYA}
         echo -e "${INFO} dalfox berhasil terinstall dan dipindahkan ke ${SEHARUSNYA}."
         ;;
+
     3)
         echo -e "${PROSES} Menginstall sqlmap..."
         snap install sqlmap
         echo -e "${INFO} sqlmap berhasil terinstall."
         ;;
+
     4)
         echo -e "${PROSES} Menginstall ParamSpider..."
         git clone https://github.com/devanshbatham/ParamSpider ~/tools/ParamSpider
@@ -104,36 +107,43 @@ case $pilihan in
         sudo pip3 install -r requirements.txt
         echo -e "${INFO} ParamSpider berhasil terinstall."
         ;;
+
     5)
         echo -e "${PROSES} Menginstall FFUF..."
         go get -u github.com/ffuf/ffuf
         mv ${FFUF} ${SEHARUSNYA}
         echo -e "${INFO} FFUF berhasil terinstall dan dipindahkan ke ${SEHARUSNYA}."
         ;;
+
     6)
         echo -e "${PROSES} Menginstall Dirsearch..."
         git clone https://github.com/maurosoria/dirsearch.git ~/tools/dirsearch
         echo -e "${INFO} Dirsearch berhasil terinstall."
         ;;
+
     7)
         echo -e "${PROSES} Menginstall NMAP..."
         sudo apt install -y nmap
         echo -e "${INFO} NMAP berhasil terinstall."
         ;;
+
     8)
         echo -e "${PROSES} Menginstall Waybackurls..."
         go get -u github.com/tomnomnom/waybackurls
         mv ${WAYBACKURLS} ${SEHARUSNYA}
         echo -e "${INFO} Waybackurls berhasil terinstall dan dipindahkan ke ${SEHARUSNYA}."
         ;;
+
     9)
         echo -e "${MAGENTA} Telegram: ${TELEGRAM}${RESET}"
         echo -e "${MAGENTA} LinkedIn: ${LINKEDIN}${RESET}"
         echo -e "${MAGENTA} Instagram: ${INSTAGRAM}${RESET}"
         ;;
+
     x|X)
         exit
         ;;
+
     *)
         echo -e "${RED} Pilihan tidak valid. Silakan pilih opsi yang tersedia.${RESET}"
         ;;
