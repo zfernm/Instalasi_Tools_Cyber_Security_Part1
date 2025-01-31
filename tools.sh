@@ -8,12 +8,7 @@ RESET="\e[0m"
 INFO="${GREEN}[ INFO ]"
 PROSES="${BLUE}[ PROSES ]"
 
-SUBFINDER="go/bin/subfinder"
-HTTPX="go/bin/httpx"
-NUCLEI="go/bin/nuclei"
-DALFOX="go/bin/dalfox"
-FFUF="go/bin/ffuf"
-WAYBACKURLS="go/bin/waybackurls"
+GOBIN="$(go env GOPATH)/bin"
 SEHARUSNYA="/usr/local/bin"
 
 TELEGRAM="https://t.me/zfernm"
@@ -69,29 +64,30 @@ read -r pilihan
 case $pilihan in
     1)
         echo -e "${PROSES} Menginstall Subfinder..."
-        go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-        echo -e "${INFO} Subfinder berhasil dipasang"
-
+        go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
         echo -e "${PROSES} Menginstall Httpx..."
-        go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
-        echo -e "${INFO} Httpx berhasil dipasang"
-
+        go install github.com/projectdiscovery/httpx/cmd/httpx@latest
         echo -e "${PROSES} Menginstall Nuclei..."
-        go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
-        echo -e "${INFO} Nuclei berhasil dipasang"
+        go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
 
         echo -e "${INFO} Memindahkan tools ke ${SEHARUSNYA}"
-        mv ${SUBFINDER} ${SEHARUSNYA}
-        mv ${HTTPX} ${SEHARUSNYA}
-        mv ${NUCLEI} ${SEHARUSNYA}
+        for tool in subfinder httpx nuclei; do
+            if [[ -f "$GOBIN/$tool" ]]; then
+                mv "$GOBIN/$tool" "$SEHARUSNYA"
+            else
+                echo -e "${RED}Gagal menemukan $tool setelah instalasi.${RESET}"
+            fi
+        done
         echo -e "${INFO} Semua Tools Projectdiscovery berhasil terinstall."
         ;;
 
     2)
         echo -e "${PROSES} Menginstall dalfox..."
         go install github.com/hahwul/dalfox/v2@latest
-        mv ${DALFOX} ${SEHARUSNYA}
-        echo -e "${INFO} dalfox berhasil terinstall dan dipindahkan ke ${SEHARUSNYA}."
+        if [[ -f "$GOBIN/dalfox" ]]; then
+            mv "$GOBIN/dalfox" "$SEHARUSNYA"
+        fi
+        echo -e "${INFO} dalfox berhasil terinstall."
         ;;
 
     3)
@@ -103,16 +99,27 @@ case $pilihan in
     4)
         echo -e "${PROSES} Menginstall ParamSpider..."
         git clone https://github.com/devanshbatham/ParamSpider ~/tools/ParamSpider
-        cd ~/tools/ParamSpider || exit
-        sudo pip3 install -r requirements.txt
-        echo -e "${INFO} ParamSpider berhasil terinstall."
+        if [[ -d ~/tools/ParamSpider ]]; then
+            cd ~/tools/ParamSpider || { echo -e "${RED}Gagal masuk ke direktori ParamSpider.${RESET}"; exit 1; }
+            if [[ -f requirements.txt ]]; then
+                sudo pip3 install -r requirements.txt
+                echo -e "${INFO} ParamSpider berhasil terinstall."
+            else
+                echo -e "${RED}File requirements.txt tidak ditemukan. Coba cek secara manual.${RESET}"
+            fi
+        else
+            echo -e "${RED}Gagal meng-clone repository ParamSpider.${RESET}"
+        fi
         ;;
+
 
     5)
         echo -e "${PROSES} Menginstall FFUF..."
-        go get -u github.com/ffuf/ffuf
-        mv ${FFUF} ${SEHARUSNYA}
-        echo -e "${INFO} FFUF berhasil terinstall dan dipindahkan ke ${SEHARUSNYA}."
+        go install github.com/ffuf/ffuf@latest
+        if [[ -f "$GOBIN/ffuf" ]]; then
+            mv "$GOBIN/ffuf" "$SEHARUSNYA"
+        fi
+        echo -e "${INFO} FFUF berhasil terinstall."
         ;;
 
     6)
@@ -129,9 +136,11 @@ case $pilihan in
 
     8)
         echo -e "${PROSES} Menginstall Waybackurls..."
-        go get -u github.com/tomnomnom/waybackurls
-        mv ${WAYBACKURLS} ${SEHARUSNYA}
-        echo -e "${INFO} Waybackurls berhasil terinstall dan dipindahkan ke ${SEHARUSNYA}."
+        go install github.com/tomnomnom/waybackurls@latest
+        if [[ -f "$GOBIN/waybackurls" ]]; then
+            mv "$GOBIN/waybackurls" "$SEHARUSNYA"
+        fi
+        echo -e "${INFO} Waybackurls berhasil terinstall."
         ;;
 
     9)
