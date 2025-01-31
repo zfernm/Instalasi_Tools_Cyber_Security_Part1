@@ -98,19 +98,21 @@ case $pilihan in
 
     4)
         echo -e "${PROSES} Menginstall ParamSpider..."
-        git clone https://github.com/devanshbatham/ParamSpider ~/tools/ParamSpider
-        if [[ -d ~/tools/ParamSpider ]]; then
-            cd ~/tools/ParamSpider || { echo -e "${RED}Gagal masuk ke direktori ParamSpider.${RESET}"; exit 1; }
-            if [[ -f requirements.txt ]]; then
-                sudo pip3 install -r requirements.txt
-                echo -e "${INFO} ParamSpider berhasil terinstall."
-            else
-                echo -e "${RED}File requirements.txt tidak ditemukan. Coba cek secara manual.${RESET}"
-            fi
+        if [[ -d /root/tools/ParamSpider ]]; then
+            echo -e "${INFO} Folder ParamSpider sudah ada. Menghapus dan menginstall ulang..."
+            rm -rf /root/tools/ParamSpider
+        fi
+        git clone https://github.com/devanshbatham/ParamSpider /root/tools/ParamSpider
+        cd /root/tools/ParamSpider || { echo -e "${RED}Gagal masuk ke direktori.${RESET}"; exit 1; }
+        if [[ -f requirements.txt ]]; then
+            pip3 install -r requirements.txt
+            echo -e "${INFO} ParamSpider berhasil terinstall."
         else
-            echo -e "${RED}Gagal meng-clone repository ParamSpider.${RESET}"
+            echo -e "${RED}File requirements.txt tidak ditemukan! Menginstall dependensi secara manual...${RESET}"
+            pip3 install certifi==2020.4.5.1 chardet==3.0.4 idna==2.9 requests==2.23.0 urllib3==1.25.8
         fi
         ;;
+
 
 
     5)
