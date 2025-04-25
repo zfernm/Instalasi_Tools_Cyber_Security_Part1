@@ -41,8 +41,9 @@ if [[ $OS != "Debian" && $OS != "Ubuntu" && $OS != "Kali" ]]; then
     exit 1
 fi
 
+# Update sistem dan install dasar
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y snap snapd python3-pip
+sudo apt install -y snap snapd python3-pip golang-go
 clear
 
 logo
