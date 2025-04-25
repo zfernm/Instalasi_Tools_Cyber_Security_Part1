@@ -63,10 +63,21 @@ read -r pilihan
 
 case $pilihan in
     1)
+        echo -e "${PROSES} Mengecek versi httpx..."
+        if command -v httpx >/dev/null 2>&1; then
+            if ! httpx -version 2>&1 | grep -qi "projectdiscovery"; then
+                echo -e "${RED}Versi httpx bukan dari ProjectDiscovery. Menghapus...${RESET}"
+                sudo apt remove -y httpx httpx-toolkit 2>/dev/null || true
+                sudo snap remove httpx 2>/dev/null || true
+            fi
+        fi
+
         echo -e "${PROSES} Menginstall Subfinder..."
         go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+
         echo -e "${PROSES} Menginstall Httpx..."
         go install github.com/projectdiscovery/httpx/cmd/httpx@latest
+
         echo -e "${PROSES} Menginstall Nuclei..."
         go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
 
@@ -112,8 +123,6 @@ case $pilihan in
             pip3 install certifi==2020.4.5.1 chardet==3.0.4 idna==2.9 requests==2.23.0 urllib3==1.25.8
         fi
         ;;
-
-
 
     5)
         echo -e "${PROSES} Menginstall FFUF..."
