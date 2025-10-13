@@ -1,22 +1,28 @@
 #!/bin/bash
 
+# ======== Styling ========
 RED="\e[31m"
 GREEN="\e[1;32m"
 BLUE="\e[1;34m"
 MAGENTA="\e[35m"
 RESET="\e[0m"
-INFO="${GREEN}[ INFO ]"
-PROSES="${BLUE}[ PROSES ]"
+INFO="${GREEN}[ INFO ]${RESET}"
+PROSES="${BLUE}[ PROSES ]${RESET}"
+ERR="${RED}[ ERROR ]${RESET}"
 
-# lebih toleran jika GOPATH kosong -> default ke $HOME/go
-GOPATH="$(go env GOPATH 2>/dev/null || echo "$HOME/go")"
-GOBIN="${GOPATH}/bin"
+# ======== Env & PATH ========
+# Pakai Go yang diinstall manual di /usr/local/go (hindari golang-go dari apt)
+export PATH=/usr/local/go/bin:$PATH
+export GOPATH="${GOPATH:-$HOME/go}"
+export GOBIN="${GOBIN:-$GOPATH/bin}"
+export PATH="$PATH:$GOBIN"
 SEHARUSNYA="/usr/local/bin"
 
 TELEGRAM="https://t.me/zfernm"
 LINKEDIN="https://www.linkedin.com/in/samuel-hamonangan-s-099604255/"
 INSTAGRAM="https://www.instagram.com/samuellhsss"
 
+# ======== Logo ========
 logo() {
     echo -e "${RED}"
     echo " ######################################################### "
@@ -32,20 +38,62 @@ logo() {
     echo ""
 }
 
+# ======== Guards ========
 if [[ $EUID -ne 0 ]]; then
-    echo -e "${RED}Anda harus menjalankan script sebagai root untuk melanjutkan.${RESET}"
+    echo -e "${ERR} Anda harus menjalankan script sebagai root."
     exit 1
 fi
 
 OS=$(lsb_release -is 2>/dev/null || echo "Unknown")
-if [[ $OS != "Debian" && $OS != "Ubuntu" && $OS != "Kali" && $OS != "LinuxMint" ]]; then
-    echo -e "${RED}Script hanya dapat dijalankan pada Debian, Ubuntu, atau Kali Linux.${RESET}"
-    exit 1
-fi
+case "$OS" in
+  Debian|Ubuntu|Kali|LinuxMint) : ;;
+  *) echo -e "${ERR} Script hanya untuk Debian/Ubuntu/Kali/LinuxMint."; exit 1 ;;
+esac
 
-# Update sistem dan install dasar
+# ======== Helpers ========
+version_ge() { # usage: version_ge 1.24.0 1.20.0
+  # returns true if $1 >= $2
+  [[ "$(printf '%s\n' "$2" "$1" | sort -V | head -n1)" == "$2" ]]
+}
+
+ensure_go() {
+  if ! command -v go >/dev/null 2>&1; then
+    echo -e "${ERR} Go tidak ditemukan di PATH."
+    echo -e "${INFO} Pastikan sudah install Go ke /usr/local/go dan PATH berisi /usr/local/go/bin."
+    echo -e "${INFO} Cek: wget https://go.dev/dl/go1.24.1.linux-amd64.tar.gz && sudo tar -C /usr/local -xzf go1.24.1.linux-amd64.tar.gz"
+    exit 1
+  fi
+  local GOV
+  GOV="$(go version | awk '{print $3}' | sed 's/go//')"
+  if ! version_ge "$GOV" "1.20.0"; then
+    echo -e "${ERR} Go minimal 1.20.0 diperlukan. Versi saat ini: $GOV"
+    echo -e "${INFO} Update Go di /usr/local/go, lalu jalankan ulang script."
+    exit 1
+  fi
+  mkdir -p "$GOBIN"
+}
+
+go_get_and_place() { # usage: go_get_and_place <module@version> <binary_name>
+  local module="$1"
+  local bin="$2"
+  echo -e "${PROSES} go install ${module}"
+  if /usr/bin/env bash -lc "go install ${module}"; then
+    if [[ -f "$GOBIN/$bin" ]]; then
+      mv "$GOBIN/$bin" "$SEHARUSNYA" && \
+        echo -e "${INFO} ${bin} dipindahkan ke ${SEHARUSNYA}" || \
+        echo -e "${ERR} Gagal memindahkan ${bin} ke ${SEHARUSNYA}. Cek permission."
+    else
+      echo -e "${ERR} ${bin} tidak ditemukan di ${GOBIN} setelah install. Cek PATH/Go env."
+    fi
+  else
+    echo -e "${ERR} go install gagal untuk ${bin}."
+    echo -e "${INFO} Tips: kamu bisa pakai binary release GitHub kalau butuh cepat."
+  fi
+}
+
+# ======== System deps (tanpa golang-go agar tidak bentrok) ========
 apt update && apt upgrade -y
-apt install -y snap snapd python3-pip golang-go git
+apt install -y snap snapd python3-pip git unzip curl ca-certificates
 
 clear
 logo
@@ -66,133 +114,103 @@ echo -e "${PROSES} Pilih Opsi:
 Pilihan: [1-11 or x]"
 read -r pilihan
 
-case $pilihan in
-    1)
-        echo -e "${PROSES} Menginstall Subfinder..."
-        # pastikan go tersedia
-        if ! command -v go >/dev/null 2>&1; then
-            echo -e "${RED}Go tidak ditemukan. Pastikan golang-go terinstall.${RESET}"
-            exit 1
-        fi
-        /usr/bin/env bash -lc "go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest"
-        if [[ -f "$GOBIN/subfinder" ]]; then
-            mv "$GOBIN/subfinder" "$SEHARUSNYA"
-            echo -e "${INFO} subfinder sudah dipindahkan ke ${SEHARUSNYA}"
-        else
-            echo -e "${RED}Gagal menemukan subfinder di ${GOBIN}, coba cek PATH go bin kamu.${RESET}"
-        fi
-        ;;
+case "$pilihan" in
+  1)
+    echo -e "${PROSES} Menginstall Subfinder..."
+    ensure_go
+    go_get_and_place "github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest" "subfinder"
+    ;;
 
-    2)
-        echo -e "${PROSES} Menginstall HTTPX..."
-        /usr/bin/env bash -lc "go install github.com/projectdiscovery/httpx/cmd/httpx@latest"
-        if [[ -f "$GOBIN/httpx" ]]; then
-            mv "$GOBIN/httpx" "$SEHARUSNYA"
-            echo -e "${INFO} httpx sudah dipindahkan ke ${SEHARUSNYA}"
-        else
-            echo -e "${RED}Gagal menemukan httpx di ${GOBIN}.${RESET}"
-        fi
-        ;;
+  2)
+    echo -e "${PROSES} Menginstall HTTPX..."
+    ensure_go
+    go_get_and_place "github.com/projectdiscovery/httpx/cmd/httpx@latest" "httpx"
+    ;;
 
-    3)
-        echo -e "${PROSES} Menginstall Nuclei..."
-        /usr/bin/env bash -lc "go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest"
-        if [[ -f "$GOBIN/nuclei" ]]; then
-            mv "$GOBIN/nuclei" "$SEHARUSNYA"
-            echo -e "${INFO} nuclei sudah dipindahkan ke ${SEHARUSNYA}"
-        else
-            echo -e "${RED}Gagal menemukan nuclei di ${GOBIN}.${RESET}"
-        fi
-        ;;
+  3)
+    echo -e "${PROSES} Menginstall Nuclei..."
+    ensure_go
+    go_get_and_place "github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest" "nuclei"
+    ;;
 
-    4)
-        echo -e "${PROSES} Menginstall dalfox..."
-        /usr/bin/env bash -lc "go install github.com/hahwul/dalfox/v2@latest"
-        if [[ -f "$GOBIN/dalfox" ]]; then
-            mv "$GOBIN/dalfox" "$SEHARUSNYA"
-            echo -e "${INFO} dalfox berhasil terinstall."
-        else
-            echo -e "${RED}Gagal menemukan dalfox di ${GOBIN}.${RESET}"
-        fi
-        ;;
+  4)
+    echo -e "${PROSES} Menginstall dalfox..."
+    ensure_go
+    go_get_and_place "github.com/hahwul/dalfox/v2@latest" "dalfox"
+    ;;
 
-    5)
-        echo -e "${PROSES} Menginstall sqlmap..."
-        # snap kadang membutuhkan restart snapd; pakai snap jika tersedia
-        if command -v snap >/dev/null 2>&1; then
-            snap install sqlmap
-            echo -e "${INFO} sqlmap berhasil terinstall via snap."
-        else
-            echo -e "${PROSES} snap tidak ditemukan, menginstall sqlmap via git..."
-            git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git /opt/sqlmap
-            ln -sf /opt/sqlmap/sqlmap.py /usr/local/bin/sqlmap
-            echo -e "${INFO} sqlmap berhasil di-clone ke /opt/sqlmap dan symlink dibuat."
-        fi
-        ;;
+  5)
+    echo -e "${PROSES} Menginstall sqlmap..."
+    if command -v snap >/dev/null 2>&1; then
+      snap install sqlmap && echo -e "${INFO} sqlmap berhasil terinstall via snap."
+    else
+      echo -e "${PROSES} snap tidak ditemukan, menginstall sqlmap via git..."
+      git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git /opt/sqlmap
+      ln -sf /opt/sqlmap/sqlmap.py /usr/local/bin/sqlmap
+      echo -e "${INFO} sqlmap di-clone ke /opt/sqlmap dan symlink dibuat."
+    fi
+    ;;
 
-    6)
-        echo -e "${PROSES} Menginstall ParamSpider..."
-        if [[ -d /root/tools/ParamSpider ]]; then
-            echo -e "${INFO} Folder ParamSpider sudah ada. Menghapus dan menginstall ulang..."
-            rm -rf /root/tools/ParamSpider
-        fi
-        git clone https://github.com/devanshbatham/ParamSpider /root/tools/ParamSpider
-        cd /root/tools/ParamSpider || { echo -e "${RED}Gagal masuk ke direktori ParamSpider.${RESET}"; exit 1; }
-        if [[ -f requirements.txt ]]; then
-            pip3 install -r requirements.txt
-            echo -e "${INFO} ParamSpider berhasil terinstall."
-        else
-            echo -e "${RED}File requirements.txt tidak ditemukan! Menginstall dependensi secara manual...${RESET}"
-            pip3 install certifi==2020.4.5.1 chardet==3.0.4 idna==2.9 requests==2.23.0 urllib3==1.25.8
-        fi
-        ;;
+  6)
+    echo -e "${PROSES} Menginstall ParamSpider..."
+    set -e
+    mkdir -p /root/tools
+    if [[ -d /root/tools/ParamSpider ]]; then
+      echo -e "${INFO} Folder ParamSpider sudah ada. Menghapus & reinstall..."
+      rm -rf /root/tools/ParamSpider
+    fi
+    git clone https://github.com/devanshbatham/ParamSpider /root/tools/ParamSpider
+    cd /root/tools/ParamSpider
+    if [[ -f requirements.txt ]]; then
+      pip3 install -r requirements.txt
+    else
+      echo -e "${ERR} requirements.txt tidak ditemukan! Menginstall dependensi dasar..."
+      pip3 install certifi==2020.4.5.1 chardet==3.0.4 idna==2.9 requests==2.23.0 urllib3==1.25.8
+    fi
+    set +e
+    echo -e "${INFO} ParamSpider berhasil terinstall."
+    ;;
 
-    7)
-        echo -e "${PROSES} Menginstall FFUF..."
-        /usr/bin/env bash -lc "go install github.com/ffuf/ffuf@latest"
-        if [[ -f "$GOBIN/ffuf" ]]; then
-            mv "$GOBIN/ffuf" "$SEHARUSNYA"
-            echo -e "${INFO} FFUF berhasil terinstall."
-        else
-            echo -e "${RED}Gagal menemukan ffuf di ${GOBIN}.${RESET}"
-        fi
-        ;;
+  7)
+    echo -e "${PROSES} Menginstall FFUF..."
+    ensure_go
+    go_get_and_place "github.com/ffuf/ffuf@latest" "ffuf"
+    ;;
 
-    8)
-        echo -e "${PROSES} Menginstall Dirsearch..."
-        mkdir -p ~/tools
-        git clone https://github.com/maurosoria/dirsearch.git ~/tools/dirsearch
-        echo -e "${INFO} Dirsearch berhasil di-clone ke ~/tools/dirsearch."
-        ;;
+  8)
+    echo -e "${PROSES} Menginstall Dirsearch..."
+    mkdir -p ~/tools
+    if [[ -d ~/tools/dirsearch ]]; then
+      echo -e "${INFO} Repo dirsearch sudah ada. Mengupdate..."
+      cd ~/tools/dirsearch && git pull --ff-only
+    else
+      git clone https://github.com/maurosoria/dirsearch.git ~/tools/dirsearch
+    fi
+    echo -e "${INFO} Dirsearch siap di ~/tools/dirsearch (jalankan python3 dirsearch.py -u <url>)."
+    ;;
 
-    9)
-        echo -e "${PROSES} Menginstall NMAP..."
-        apt install -y nmap
-        echo -e "${INFO} NMAP berhasil terinstall."
-        ;;
+  9)
+    echo -e "${PROSES} Menginstall NMAP..."
+    apt install -y nmap && echo -e "${INFO} NMAP berhasil terinstall."
+    ;;
 
-    10)
-        echo -e "${PROSES} Menginstall Waybackurls..."
-        /usr/bin/env bash -lc "go install github.com/tomnomnom/waybackurls@latest"
-        if [[ -f "$GOBIN/waybackurls" ]]; then
-            mv "$GOBIN/waybackurls" "$SEHARUSNYA"
-            echo -e "${INFO} waybackurls berhasil terinstall."
-        else
-            echo -e "${RED}Gagal menemukan waybackurls di ${GOBIN}.${RESET}"
-        fi
-        ;;
+  10)
+    echo -e "${PROSES} Menginstall Waybackurls..."
+    ensure_go
+    go_get_and_place "github.com/tomnomnom/waybackurls@latest" "waybackurls"
+    ;;
 
-    11)
-        echo -e "${MAGENTA} Telegram: ${TELEGRAM}${RESET}"
-        echo -e "${MAGENTA} LinkedIn: ${LINKEDIN}${RESET}"
-        echo -e "${MAGENTA} Instagram: ${INSTAGRAM}${RESET}"
-        ;;
+  11)
+    echo -e "${MAGENTA} Telegram: ${TELEGRAM}${RESET}"
+    echo -e "${MAGENTA} LinkedIn: ${LINKEDIN}${RESET}"
+    echo -e "${MAGENTA} Instagram: ${INSTAGRAM}${RESET}"
+    ;;
 
-    x|X)
-        exit
-        ;;
+  x|X)
+    exit 0
+    ;;
 
-    *)
-        echo -e "${RED} Pilihan tidak valid. Silakan pilih opsi yang tersedia.${RESET}"
-        ;;
+  *)
+    echo -e "${ERR} Pilihan tidak valid. Silakan pilih opsi yang tersedia."
+    ;;
 esac
